@@ -603,64 +603,175 @@ class XYPlotGenerator:
             json.dump(metadata, f, indent=2)
         print(f"Metadata saved to: {metadata_path}")
         
-    def _create_grid_image(
-        self,
-        images: List[List[Image.Image]],
-        models: List[Tuple[Path, str]],
-        prompts: List[str]
-    ) -> Image.Image:
-        """Create the grid image with labels"""
-        from PIL import ImageDraw, ImageFont
-        
-        resolution = self.config['generation']['resolution']
-        margin = self.config['grid']['margin_size']
-        
-        num_models = len(models)
-        num_prompts = len(prompts)
-        
-        # Calculate canvas size
-        canvas_width = margin + (num_prompts * resolution)
-        canvas_height = margin + (num_models * resolution)
-        
-        # Create canvas
-        canvas = Image.new('RGB', (canvas_width, canvas_height), 'white')
-        draw = ImageDraw.Draw(canvas)
-        
-        # Try to load font
+def _create_grid_image(
+    self,
+    images: List[List[Image.Image]],
+    models: List[Tuple[Path, str]],
+    prompts: List[str]
+) -> Image.Image:
+    """Create the grid image with labels"""
+    from PIL import ImageDraw, ImageFont
+    import textwrap
+    
+    resolution = self.config['generation']['resolution']
+    margin = self.config['grid']['margin_size']
+    
+    num_models = len(models)
+    num_prompts = len(prompts)
+    
+    # Calculate canvas size
+    canvas_width = margin + (num_prompts * resolution)
+    canvas_height = margin + (num_models * resolution)
+    
+    # Create canvas
+    canvas = Image.new('RGB', (canvas_width, canvas_height), 'white')
+    draw = ImageDraw.Draw(canvas)
+    
+    # Try to load font
+    font_size = self.config['grid']['label_font_size']
+    try:
+        font = ImageFont.truetype("arial.ttf", font_size)
+    except:
         try:
-            font = ImageFont.truetype("arial.ttf", self.config['grid']['label_font_size'])
+            # Try alternative font locations
+            font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", font_size)
         except:
             font = ImageFont.load_default()
+    
+    # Get configuration
+    line_color = self.config['grid']['grid_line_color']
+    line_width = self.config['grid']['grid_line_width']
+    font_color = self.config['grid'].get('label_font_color', '#000000')
+    max_chars = self.config['grid'].get('max_label_chars', 150)
+    line_spacing = self.config['grid'].get('label_line_spacing', 5)
+    
+    def wrap_text(text, max_width, font):
+        """Wrap text to fit within max_width pixels"""
+        # First check if we need to truncate
+        if len(text) > max_chars:
+            text = text[:max_chars] + "..."
         
-        # Draw grid lines and labels
-        line_color = self.config['grid']['grid_line_color']
-        line_width = self.config['grid']['grid_line_width']
+        # Try to fit text as-is
+        bbox = draw.textbbox((0, 0), text, font=font)
+        if bbox[2] - bbox[0] <= max_width:
+            return [text]
         
-        # Draw prompt headers
-        for i, prompt in enumerate(prompts):
-            x = margin + (i * resolution)
-            display_text = (prompt[:40] + "...") if len(prompt) > 40 else prompt
-            draw.text((x + 10, 10), display_text, fill='black', font=font)
-            if i > 0:
-                draw.line([(x, margin), (x, canvas_height)], fill=line_color, width=line_width)
+        # Need to wrap
+        words = text.split()
+        lines = []
+        current_line = []
         
-        # Draw model labels
-        for i, (_, model_name) in enumerate(models):
-            y = margin + (i * resolution)
-            display_name = (model_name[:30] + "...") if len(model_name) > 30 else model_name
-            draw.text((10, y + resolution//2), display_name, fill='black', font=font)
-            if i > 0:
-                draw.line([(margin, y), (canvas_width, y)], fill=line_color, width=line_width)
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            bbox = draw.textbbox((0, 0), test_line, font=font)
+            
+            if bbox[2] - bbox[0] <= max_width:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                    current_line = [word]
+                else:
+                    # Word is too long, need to break it
+                    for i in range(len(word)):
+                        if i > 0:
+                            test_word = word[:i] + "..."
+                            bbox = draw.textbbox((0, 0), test_word, font=font)
+                            if bbox[2] - bbox[0] > max_width:
+                                lines.append(word[:i-1] + "...")
+                                break
+                    else:
+                        lines.append(word)
+                    current_line = []
         
-        # Paste images
-        for model_idx, model_images in enumerate(images):
-            for prompt_idx, image in enumerate(model_images):
-                x = margin + (prompt_idx * resolution)
-                y = margin + (model_idx * resolution)
+        if current_line:
+            lines.append(' '.join(current_line))
+        
+        return lines if lines else [text[:20] + "..."]
+    
+    def draw_wrapped_text(x, y, text, max_width, font, fill, anchor="lt"):
+        """Draw wrapped text at position"""
+        lines = wrap_text(text, max_width, font)
+        
+        if anchor == "lt":  # left-top
+            current_y = y
+            for line in lines:
+                draw.text((x, current_y), line, fill=fill, font=font)
+                bbox = draw.textbbox((0, 0), line, font=font)
+                current_y += (bbox[3] - bbox[1]) + line_spacing
+        elif anchor == "lm":  # left-middle
+            # Calculate total height
+            total_height = 0
+            for line in lines:
+                bbox = draw.textbbox((0, 0), line, font=font)
+                total_height += (bbox[3] - bbox[1]) + line_spacing
+            total_height -= line_spacing  # Remove last spacing
+            
+            # Draw centered vertically
+            current_y = y - total_height // 2
+            for line in lines:
+                draw.text((x, current_y), line, fill=fill, font=font)
+                bbox = draw.textbbox((0, 0), line, font=font)
+                current_y += (bbox[3] - bbox[1]) + line_spacing
+    
+    # Draw prompt headers (horizontal labels at top)
+    for i, prompt in enumerate(prompts):
+        x = margin + (i * resolution)
+        # Draw background for better readability
+        draw.rectangle([(x, 0), (x + resolution, margin - 5)], fill='white')
+        
+        # Draw wrapped text
+        draw_wrapped_text(
+            x + 10, 
+            10, 
+            prompt, 
+            resolution - 20,  # Leave some padding
+            font, 
+            font_color, 
+            anchor="lt"
+        )
+        
+        # Draw vertical separator line
+        if i > 0:
+            draw.line([(x, margin), (x, canvas_height)], fill=line_color, width=line_width)
+    
+    # Draw horizontal line under headers
+    draw.line([(0, margin - 5), (canvas_width, margin - 5)], fill=line_color, width=line_width)
+    
+    # Draw model labels (vertical labels on left)
+    for i, (_, model_name) in enumerate(models):
+        y = margin + (i * resolution)
+        
+        # Draw background for better readability
+        draw.rectangle([(0, y), (margin - 5, y + resolution)], fill='white')
+        
+        # Draw wrapped text (vertically centered)
+        draw_wrapped_text(
+            10, 
+            y + resolution // 2, 
+            model_name, 
+            margin - 20,  # Leave some padding
+            font, 
+            font_color, 
+            anchor="lm"
+        )
+        
+        # Draw horizontal separator line
+        if i > 0:
+            draw.line([(margin, y), (canvas_width, y)], fill=line_color, width=line_width)
+    
+    # Draw vertical line after labels
+    draw.line([(margin - 5, 0), (margin - 5, canvas_height)], fill=line_color, width=line_width)
+    
+    # Paste images
+    for model_idx, model_images in enumerate(images):
+        for prompt_idx, image in enumerate(model_images):
+            x = margin + (prompt_idx * resolution)
+            y = margin + (model_idx * resolution)
+            
+            if image.size != (resolution, resolution):
+                image = image.resize((resolution, resolution), Image.Resampling.LANCZOS)
                 
-                if image.size != (resolution, resolution):
-                    image = image.resize((resolution, resolution), Image.Resampling.LANCZOS)
-                    
-                canvas.paste(image, (x, y))
-        
-        return canvas
+            canvas.paste(image, (x, y))
+    
+    return canvas

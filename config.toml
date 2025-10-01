@@ -29,3 +29,6 @@ label_font_size = 24
 margin_size = 200
 grid_line_width = 2
 grid_line_color = "#cccccc"
+label_font_color = "#000000"  # Font color for labels
+max_label_chars = 150  # Maximum characters before truncating with ...
+label_line_spacing = 5  # Spacing between wrapped lines
