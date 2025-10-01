@@ -1,0 +1,21 @@
+[xy_plot]
+x_axis = "prompt"
+y_axis = "checkpoint"
+
+[checkpoint]
+# Multiple checkpoints for Y-axis
+path = "/models/checkpoints"  # Will find all .safetensors in directory
+
+[prompt]
+values = [
+    "photorealistic portrait",
+    "anime style illustration", 
+    "oil painting artwork"
+]
+
+[generation]
+negative_prompt = "low quality, blurry"
+seed = 42
+resolution = 1024
+steps = 30
+cfg_scale = 7.0

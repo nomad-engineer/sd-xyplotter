@@ -1,0 +1,25 @@
+[xy_plot]
+x_axis = "lora1_weight"
+y_axis = "lora2_weight"
+x_axis_label = "Style LoRA"
+y_axis_label = "Character LoRA"
+
+[checkpoint]
+# Single base model
+path = "/models/base_model.safetensors"
+
+[lora1_weight]
+path = "/loras/anime_style.safetensors"
+values = [0.5, 0.75, 1.0]
+
+[lora2_weight]
+path = "/loras/character.safetensors"
+values = [0.5, 0.75, 1.0]
+
+[generation]
+prompt = "1girl, portrait, high quality"
+negative_prompt = "low quality"
+seed = 42
+resolution = 1024
+steps = 30
+cfg_scale = 7.0

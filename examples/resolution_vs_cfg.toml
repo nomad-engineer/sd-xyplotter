@@ -1,0 +1,18 @@
+[xy_plot]
+x_axis = "cfg_scale"
+y_axis = "resolution"
+
+[checkpoint]
+path = "/models/base_model.safetensors"
+
+[cfg_scale]
+values = [5.0, 7.0, 9.0, 11.0]
+
+[resolution]
+values = [512, 768, 1024]
+
+[generation]
+prompt = "landscape photograph, highly detailed"
+negative_prompt = "blurry, low quality"
+seed = 42
+steps = 30

@@ -1,34 +1,115 @@
-[paths]
-model_dir = "/path/to/models"  # Directory containing .safetensors files
-base_checkpoint = ""  # Leave empty for full checkpoints, or specify base model for LoRAs
-output_dir = "./output"
-prompts_file = "./prompts.txt"
+# XY Plot Configuration File
+# ========================
+# This file defines what parameters to vary on each axis of the grid
+# Any parameter with multiple values can be used as an axis
+# Parameters with single values are applied to all generations
 
+# Define which parameters vary on each axis
+[xy_plot]
+x_axis = "prompt"      # Parameter to vary on X-axis (horizontal)
+y_axis = "lora1"       # Parameter to vary on Y-axis (vertical)
+x_axis_label = "Prompts"     # Optional: Custom label for X-axis
+y_axis_label = "LoRA Models"  # Optional: Custom label for Y-axis
+
+# Checkpoint configuration
+# Single path = base model for all generations
+# Multiple paths or directory = can be used as axis variable
+[checkpoint]
+# Option 1: Single checkpoint (used as base for all)
+path = "/path/to/base_model.safetensors"
+
+# Option 2: Directory of checkpoints (multiple - can be axis)
+# path = "/path/to/checkpoints_directory"
+
+# Option 3: List of specific checkpoints (multiple - can be axis)
+# values = [
+#     "/path/to/checkpoint1.safetensors",
+#     "/path/to/checkpoint2.safetensors",
+#     "/path/to/checkpoint3.safetensors"
+# ]
+
+# Prompt configuration
+# Can be single or multiple values
+[prompt]
+values_file = "prompts.txt"
+values = [
+    "a beautiful landscape, highly detailed, masterpiece",
+    "portrait of a person, professional photography, studio lighting",
+    "cyberpunk city at night, neon lights, futuristic",
+    "fantasy castle on a mountain, magical atmosphere, epic",
+    "cute animal, adorable, high quality photograph"
+]
+
+# LoRA configuration #1
+# Can reference a directory or list specific files
+[lora1]
+# Option 1: Directory of LoRA files
+path = "/path/to/loras_directory"
+weight = 1.0  # Weight to apply to all LoRAs from this set
+
+# Option 2: List of specific LoRA files
+# values = [
+#     "/path/to/style_lora.safetensors",
+#     "/path/to/character_lora.safetensors",
+#     "/path/to/detail_lora.safetensors"
+# ]
+# weight = 1.0
+
+# Option 3: Single LoRA with multiple weights
+# path = "/path/to/single_lora.safetensors"
+# weights = [0.5, 0.75, 1.0, 1.25]  # This creates multiple variations
+
+# LoRA configuration #2 (optional - for dual LoRA setups)
+#[lora2]
+#path = ""
+#weights = [1.0]  # Different weights for this LoRA
+
+# Generation parameters
+# These are applied to all images unless varied on an axis
 [generation]
-resolution = 1024
-steps = 30
-cfg_scale = 7.0
-seed = 42  # Use -1 for random
-negative_prompt = "low quality, blurry, distorted, deformed, ugly"
-scheduler = "EulerDiscreteScheduler"  # Options: DDIM, PNDM, LMS, Euler, EulerAncestral, DPM++
-clip_skip = 1
+negative_prompt = "low quality, blurry, distorted, deformed, ugly, bad anatomy"
+seed = 42               # Use -1 for random
+resolution = 1024       # Image size (square)
+steps = 30             # Sampling steps
+cfg_scale = 7.0        # Classifier-free guidance scale
+scheduler = "EulerDiscreteScheduler"  # Scheduler type
+clip_skip = 1          # CLIP skip layers
 
-[lora]
-lora_strength = 1.0  # LoRA strength/weight (0.0 to 2.0, typically 0.8-1.0)
-clip_strength = 1.0  # CLIP strength for LoRAs (0.0 to 2.0, typically 1.0)
+# Alternative: These parameters can also have multiple values for axis use
+[resolution_options]
+values = [512, 768, 1024]
 
+[steps_options]
+values = [20, 30, 40, 50]
+
+[cfg_scale_options]
+values = [5.0, 7.0, 9.0, 11.0]
+
+[seed_options]
+values = [42, 123, 456, 789]
+
+# Output settings
 [output]
-save_individual_images = true
-individual_images_dir = "individual_images"
-grid_image_quality = 95
-create_preview = true
-preview_scale = 0.25
+output_dir = "./output"              # Where to save the grid
+save_individual_images = true        # Save each generated image separately
+individual_images_dir = "individual" # Subdirectory for individual images
+grid_image_quality = 95             # JPEG quality for grid (1-100)
+create_preview = true                # Create a smaller preview image
+preview_scale = 0.25                 # Scale factor for preview (0.25 = 1/4 size)
 
+# Grid appearance settings
 [grid]
-label_font_size = 24
-margin_size = 200
-grid_line_width = 2
-grid_line_color = "#cccccc"
-label_font_color = "#000000"  # Font color for labels
-max_label_chars = 150  # Maximum characters before truncating with ...
-label_line_spacing = 5  # Spacing between wrapped lines
+margin_size = 250           # Size of margin for labels (pixels)
+label_font_size = 20        # Font size for labels
+label_font_color = "#000000"  # Font color (hex)
+label_line_spacing = 4      # Space between wrapped text lines
+max_label_chars = 200       # Maximum characters before truncating with ...
+grid_line_width = 2         # Width of grid lines
+grid_line_color = "#cccccc"   # Grid line color (hex)
+background_color = "#ffffff"  # Background color (hex)
+
+# Memory optimization settings
+[memory_optimization]
+enable_cpu_offload = true      # Move models between CPU/GPU to save VRAM
+enable_attention_slicing = true  # Slice attention computation to save VRAM
+enable_vae_tiling = true       # Decode in tiles to save VRAM

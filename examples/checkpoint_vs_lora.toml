@@ -1,0 +1,30 @@
+[xy_plot]
+x_axis = "checkpoint"
+y_axis = "lora1"
+x_axis_label = "Base Models"
+y_axis_label = "Style LoRAs"
+
+[checkpoint]
+# Multiple checkpoints for X-axis
+values = [
+    "/models/anime_model.safetensors",
+    "/models/realistic_model.safetensors",
+    "/models/artistic_model.safetensors"
+]
+
+[lora1]
+# Multiple LoRAs for Y-axis
+values = [
+    "/loras/watercolor_style.safetensors",
+    "/loras/oil_painting.safetensors",
+    "/loras/sketch_style.safetensors"
+]
+weight = 0.8
+
+[generation]
+prompt = "portrait of a woman, masterpiece, best quality"
+negative_prompt = "low quality, blurry"
+seed = 42
+resolution = 1024
+steps = 30
+cfg_scale = 7.0

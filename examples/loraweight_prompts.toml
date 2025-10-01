@@ -1,0 +1,27 @@
+[xy_plot]
+x_axis = "prompt"
+y_axis = "lora1_weight"
+x_axis_label = "Different Prompts"
+y_axis_label = "LoRA Strength"
+
+[checkpoint]
+# Single checkpoint as base
+path = "/models/base_sdxl.safetensors"
+
+[prompt]
+values = [
+    "anime style portrait",
+    "realistic photograph",
+    "oil painting style"
+]
+
+[lora1_weight]
+path = "/loras/style_enhancer.safetensors"
+values = [0.4, 0.6, 0.8, 1.0, 1.2]
+
+[generation]
+negative_prompt = "low quality"
+seed = 42
+resolution = 1024
+steps = 30
+cfg_scale = 7.0
