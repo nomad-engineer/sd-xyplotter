@@ -1,0 +1,12 @@
+torch>=2.0.0
+torchvision
+diffusers>=0.24.0
+transformers>=4.35.0
+accelerate>=0.24.0
+safetensors>=0.4.0
+peft>=0.7.0  # Required for LoRA support
+Pillow>=10.0.0
+tqdm
+toml
+omegaconf
+xformers  # optional but recommended for memory efficiency

@@ -1,0 +1,31 @@
+[paths]
+model_dir = "/path/to/models"  # Directory containing .safetensors files
+base_checkpoint = ""  # Leave empty for full checkpoints, or specify base model for LoRAs
+output_dir = "./output"
+prompts_file = "./prompts.txt"
+
+[generation]
+resolution = 1024
+steps = 30
+cfg_scale = 7.0
+seed = 42  # Use -1 for random
+negative_prompt = "low quality, blurry, distorted, deformed, ugly"
+scheduler = "EulerDiscreteScheduler"  # Options: DDIM, PNDM, LMS, Euler, EulerAncestral, DPM++
+clip_skip = 1
+
+[lora]
+lora_strength = 1.0  # LoRA strength/weight (0.0 to 2.0, typically 0.8-1.0)
+clip_strength = 1.0  # CLIP strength for LoRAs (0.0 to 2.0, typically 1.0)
+
+[output]
+save_individual_images = true
+individual_images_dir = "individual_images"
+grid_image_quality = 95
+create_preview = true
+preview_scale = 0.25
+
+[grid]
+label_font_size = 24
+margin_size = 200
+grid_line_width = 2
+grid_line_color = "#cccccc"
